@@ -2,6 +2,7 @@ package routes
 
 import (
 	"main/controllers"
+	"main/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,6 +22,6 @@ func UserRoutes(router *gin.Engine) {
 	auth := router.Group("/auth")
 	{
 		auth.POST("/login", controllers.GenerateToken)
-		auth.POST("/refresh", controllers.RefreshToken)
+		auth.GET("validate",middlewares.RequireAuth ,controllers.Validate)
 	}
 }

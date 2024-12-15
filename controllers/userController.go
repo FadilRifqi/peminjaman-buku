@@ -23,7 +23,7 @@ func Register(c *gin.Context){
         return
     }
 
-    if body.Email == "" || body.Password == "" || body.Username == "" {
+    if body.Email == "" || body.Password == "" {
         c.JSON(http.StatusBadRequest, gin.H{"error": "Email and Password cannot be empty"})
         return
     }
