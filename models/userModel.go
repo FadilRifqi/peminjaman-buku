@@ -4,7 +4,9 @@ import "gorm.io/gorm"
 
 type User struct {
 	gorm.Model
-	Username 	string `gorm:"unique"`
-	Email 		string `gorm:"unique"`
-	Password 	string
+	Username 	string 	`gorm:"unique;type:varchar(255)"`
+	Email 		string 	`gorm:"unique;type:varchar(255)"`
+	Password 	string 	`gorm:"type:varchar(255)"`
+	RoleID 		uint
+	Role 		Role 	`gorm:"foreignKey:RoleID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }

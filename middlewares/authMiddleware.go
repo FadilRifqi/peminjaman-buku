@@ -57,10 +57,10 @@ func RequireAuth(c *gin.Context) {
 
 	// Find the user based on the "sub" claim
 	var user models.User
-	if err := database.DB.First(&user, "id = ?", claims["sub"]).Error; err != nil || user.ID == 0 {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
+    if err := database.DB.Preload("Role").First(&user, "id = ?", claims["sub"]).Error; err != nil || user.ID == 0 {
+        c.AbortWithStatus(http.StatusUnauthorized)
+        return
+    }
 
 	// Attach the user to the context
 	c.Set("user", user)
@@ -119,16 +119,16 @@ func handleTokenRefresh(c *gin.Context) {
 
 	// Set the new "Authorization" token in the cookie
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("Authorization", newTokenString, 3600 * 24, "/", "", false, true)
+	c.SetCookie("Authorization", newTokenString, 3600 * 24, "", "", false, true)
 
 	//Get User from the database
 	var user models.User
-	if err := database.DB.First(&user, "id = ?", refreshClaims["sub"]).Error; err != nil || user.ID == 0 {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
+    if err := database.DB.Preload("Role").First(&user, "id = ?", refreshClaims["sub"]).Error; err != nil || user.ID == 0 {
+        c.AbortWithStatus(http.StatusUnauthorized)
+        return
+    }
 
-	// Attach the user ID to the context and proceed
-	c.Set("user", user)
+    // Attach the user to the context
+    c.Set("user", user)
 	c.Next()
 }
