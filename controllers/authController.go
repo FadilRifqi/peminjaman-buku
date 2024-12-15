@@ -46,25 +46,11 @@ func GenerateToken(c *gin.Context) {
 		return
 	}
 
-	// refresh := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-	// 	"sub": user.ID,
-	// 	"exp": time.Now().Add(time.Hour * 24 * 7).Unix(),
-	// })
-
-	// refreshToken, err := refresh.SignedString(os.Getenv("SECRET"))
-
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
-	// 	return
-	// }
-
-
-
 	//Generate jwt token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 	"sub": user.ID,
-	// "refresh": refresh,
-	"exp": time.Now().Add(time.Hour * 24).Unix(),
+	"exp": time.Now().Add(time.Minute * 60).Unix(),
+	"iat": time.Now().Unix(),
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
@@ -74,9 +60,24 @@ func GenerateToken(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 		return
 	}
+	// Generate Refresh Token
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": user.ID,
+		"exp": time.Now().Add(time.Hour * 24 * 7).Unix(),
+		"iat": time.Now().Unix(),
+	})
+
+	refreshTokenString, err := refreshToken.SignedString([]byte(os.Getenv("SECRET")))
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
+		return
+	}
+
 	// Set Cookie
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("Authorization", tokenString, 3600 * 24, "", "", false, true)
+	c.SetCookie("RefreshToken", refreshTokenString, 3600 * 24 * 7, "", "", false, true)
 
 	c.JSON(http.StatusOK, gin.H{})
 }
