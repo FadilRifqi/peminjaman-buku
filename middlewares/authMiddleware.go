@@ -144,8 +144,6 @@ func IsMe(c *gin.Context) {
         return
     }
 
-	fmt.Println(u.ID == uint(id))
-
     if u.ID != uint(id) {
 		if u.Role.Name == "admin" {
 			c.Next()

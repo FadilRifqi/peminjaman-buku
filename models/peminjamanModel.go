@@ -15,7 +15,7 @@ type Peminjaman struct {
 	TanggalPinjam 	time.Time
     TanggalKembali 	time.Time
     BatasKembali  	time.Time
-	Status 			string `gorm:"type:varchar(255),default:'Dipinjam'"`
+	Status 			string `gorm:"type:varchar(255);default:'Dipinjam'"`
 	Denda 			uint `gorm:"default:0"`
 }
 
