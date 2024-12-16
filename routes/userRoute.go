@@ -9,18 +9,16 @@ import (
 
 func UserRoutes(router *gin.Engine) {
 	user := router.Group("/user")
+	user.Use(middlewares.RequireAuth)
 	{
-		user.GET("/", func(ctx *gin.Context) {
-			ctx.JSON(200, gin.H{
-				"message": "Not implemented",
-			})
-		})
-		user.POST("/register", controllers.Register)
-		user.PATCH("/update/:id", controllers.UpdateUser)
+		user.GET("/all", controllers.GetUsers)
+		user.GET("/:id", controllers.GetUserById)
+		user.PATCH("/update/:id", middlewares.IsMe ,controllers.UpdateUser)
 		user.DELETE("/delete/:id", controllers.DeleteUser)
 	}
 	auth := router.Group("/auth")
 	{
+		auth.POST("/register", controllers.Register)
 		auth.POST("/login", controllers.GenerateToken)
 		auth.GET("/validate",middlewares.RequireAuth ,controllers.Validate)
 		auth.GET("/check",middlewares.RequireAuth, middlewares.Admin ,controllers.Validate)

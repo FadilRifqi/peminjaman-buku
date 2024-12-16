@@ -12,7 +12,59 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// TODO: Jwt token
+func Register(c *gin.Context){
+	// Get Email and Password
+	var body struct {
+		Username 	string	`json:"username"`
+		Email 		string	`json:"email"`
+		Password 	string	`json:"password"`
+	}
+
+	// Validate Email and Password
+	if c.Bind(&body) != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Request"})
+        return
+    }
+
+    if body.Email == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Email cannot be empty"})
+        return
+    }
+
+	if body.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Password cannot be empty"})
+		return
+	}
+
+	if body.Username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username cannot be empty"})
+		return
+	}
+
+	// Hash the Password
+	hash,err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
+		return
+	}
+
+	// Save the User in the Database
+	user := models.User{
+		Username: body.Username,
+		Email: body.Email,
+		Password: string(hash),
+	}
+
+	result := database.DB.Create(&user)
+
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
+		return
+	}
+	// Respond
+	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
+}
 
 func GenerateToken(c *gin.Context) {
 	//Get Email and Password
@@ -35,7 +87,7 @@ func GenerateToken(c *gin.Context) {
 	database.DB.First(&user, "email = ?", body.Email)
 
 	if user.ID == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Invalid Credentials"})
 		return
 	}
 

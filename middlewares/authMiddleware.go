@@ -7,6 +7,7 @@ import (
 	"main/models"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,8 +18,8 @@ func RequireAuth(c *gin.Context) {
 	// Get the "Authorization" cookie
 	tokenString, err := c.Cookie("Authorization")
 	if err != nil {
-		fmt.Println("Authorization cookie missing:", err)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		// Abort with status and message
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "You Must Be Logged In"})
 		return
 	}
 
@@ -35,30 +36,27 @@ func RequireAuth(c *gin.Context) {
 	if err != nil {
 		// Handle token expiration specifically
 		if errors.Is(err, jwt.ErrTokenExpired) {
-			fmt.Println("Authorization token expired. Checking refresh token...")
 			// Handle token regeneration here
 			handleTokenRefresh(c)
 			return
 		}
 
 		// Any other errors mean the token is invalid
-		fmt.Println("Invalid Authorization token:", err.Error())
-		fmt.Println(err.Error())
-		c.AbortWithStatus(http.StatusUnauthorized)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid Token"})
 		return
 	}
 
 	// Extract claims from the token
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		c.AbortWithStatus(http.StatusUnauthorized)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid Token"})
 		return
 	}
 
 	// Find the user based on the "sub" claim
 	var user models.User
     if err := database.DB.Preload("Role").First(&user, "id = ?", claims["sub"]).Error; err != nil || user.ID == 0 {
-        c.AbortWithStatus(http.StatusUnauthorized)
+        c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
         return
     }
 
@@ -74,8 +72,7 @@ func handleTokenRefresh(c *gin.Context) {
 	// Get the "RefreshToken" cookie
 	refreshTokenString, err := c.Cookie("RefreshToken")
 	if err != nil {
-		fmt.Println("Refresh token missing:", err)
-		c.AbortWithStatus(http.StatusUnauthorized)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "You Must Be Logged In"})
 		return
 	}
 
@@ -90,16 +87,14 @@ func handleTokenRefresh(c *gin.Context) {
 
 	// Check if the refresh token is valid
 	if err != nil || !refreshToken.Valid {
-		fmt.Println("Invalid Refresh token:", err.Error())
-		c.AbortWithStatus(http.StatusUnauthorized)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid Token"})
 		return
 	}
 
 	// Extract claims from the refresh token
 	refreshClaims, ok := refreshToken.Claims.(jwt.MapClaims)
 	if !ok || float64(time.Now().Unix()) > refreshClaims["exp"].(float64) {
-		fmt.Println("Refresh token expired")
-		c.AbortWithStatus(http.StatusUnauthorized)
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid Token"})
 		return
 	}
 
@@ -112,8 +107,7 @@ func handleTokenRefresh(c *gin.Context) {
 
 	newTokenString, err := newToken.SignedString([]byte(os.Getenv("SECRET")))
 	if err != nil {
-		fmt.Println("Failed to generate new Authorization token:", err.Error())
-		c.AbortWithStatus(http.StatusInternalServerError)
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 		return
 	}
 
@@ -124,11 +118,42 @@ func handleTokenRefresh(c *gin.Context) {
 	//Get User from the database
 	var user models.User
     if err := database.DB.Preload("Role").First(&user, "id = ?", refreshClaims["sub"]).Error; err != nil || user.ID == 0 {
-        c.AbortWithStatus(http.StatusUnauthorized)
+        c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "User not found"})
         return
     }
 
     // Attach the user to the context
     c.Set("user", user)
 	c.Next()
+}
+
+func IsMe(c *gin.Context) {
+	// Check if the user is the same as the one in the URL
+	user, _ := c.Get("user")
+	u, ok := user.(models.User)
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		return
+	}
+
+	// Convert the URL parameter from string to uint
+    idParam := c.Param("id")
+    id, err := strconv.ParseUint(idParam, 10, 32)
+    if err != nil {
+        c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
+        return
+    }
+
+	fmt.Println(u.ID == uint(id))
+
+    if u.ID != uint(id) {
+		if u.Role.Name == "admin" {
+			c.Next()
+			return
+		}
+        c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+        return
+    }
+
+    c.Next()
 }

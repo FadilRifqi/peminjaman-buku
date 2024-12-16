@@ -18,6 +18,7 @@ func main() {
 	r := gin.Default()
 
 	routes.UserRoutes(r)
+	routes.BukuRoutes(r)
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{

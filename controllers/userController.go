@@ -6,50 +6,30 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
-func Register(c *gin.Context){
-	// Get Email and Password
-	var body struct {
-		Username 	string
-		Email 		string
-		Password 	string
-	}
-
-	// Validate Email and Password
-	if c.Bind(&body) != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Bad Request"})
-        return
-    }
-
-    if body.Email == "" || body.Password == "" {
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Email and Password cannot be empty"})
-        return
-    }
-
-	// Hash the Password
-	hash,err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
-		return
-	}
-
-	// Save the User in the Database
-	user := models.User{
-		Email: body.Email,
-		Password: string(hash),
-	}
-
-	result := database.DB.Create(&user)
+func GetUsers(c *gin.Context){
+	var users []models.User
+	result := database.DB.Find(&users)
 
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong"})
 		return
 	}
-	// Respond
-	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully"})
+
+	c.JSON(http.StatusOK, gin.H{"data": users})
+}
+
+func GetUserById(c *gin.Context){
+	var user models.User
+	result := database.DB.First(&user, c.Param("id"))
+
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": user})
 }
 
 func UpdateUser(c *gin.Context){
@@ -64,8 +44,8 @@ func UpdateUser(c *gin.Context){
 
     // Get Email and Username
     var body struct {
-        Username string
-        Email    string
+        Username string	`json:"username"`
+        Email    string	`json:"email"`
     }
 
     // Validate Email and Username
