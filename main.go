@@ -22,6 +22,8 @@ func main() {
 	routes.PeminjamanRoutes(r)
 	routes.FriendshipRoutes(r)
 	routes.ChatRoutes(r)
+	routes.RoomRoutes(r)
+	routes.WebSocketRoutes(r)
 
 	r.Run()
 }

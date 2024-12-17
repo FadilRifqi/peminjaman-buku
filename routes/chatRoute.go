@@ -15,3 +15,11 @@ func ChatRoutes(router *gin.Engine) {
 		chatRoutes.POST("/send/:id",middlewares.IsRoomMember ,controllers.SendChat)
 	}
 }
+
+func RoomRoutes(router *gin.Engine) {
+	roomRoutes := router.Group("/room")
+	roomRoutes.Use(middlewares.RequireAuth)
+	{
+		roomRoutes.GET("/:label",controllers.GetRoomIDFromLabel)
+	}
+}

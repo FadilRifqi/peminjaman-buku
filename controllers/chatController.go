@@ -9,8 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//FIXME: How to get the room ID from the Frontend?
-
 func SendChat(c *gin.Context) {
 	var body struct{
 		Message string `json:"message"`
