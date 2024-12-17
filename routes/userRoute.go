@@ -22,5 +22,6 @@ func UserRoutes(router *gin.Engine) {
 		auth.POST("/login", controllers.GenerateToken)
 		auth.GET("/validate",middlewares.RequireAuth ,controllers.Validate)
 		auth.GET("/check",middlewares.RequireAuth, middlewares.Admin ,controllers.Validate)
+		auth.DELETE("/logout",middlewares.RequireAuth, controllers.Logout)
 	}
 }

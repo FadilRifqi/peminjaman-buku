@@ -19,7 +19,7 @@ func RequireAuth(c *gin.Context) {
 	tokenString, err := c.Cookie("Authorization")
 	if err != nil {
 		// Abort with status and message
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "You Must Be Logged In"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "No Token Provided"})
 		return
 	}
 
