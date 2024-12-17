@@ -7,4 +7,5 @@ type Chat struct {
 	RoomID 		uint
 	Room		Room `gorm:"foreignKey:RoomID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 	UserID 		uint
+	Message 	string
 }

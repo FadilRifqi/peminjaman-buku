@@ -9,4 +9,5 @@ func SyncDB(){
 	DB.AutoMigrate(&models.Room{})
 	DB.AutoMigrate(&models.Friendship{})
 	DB.AutoMigrate(&models.Chat{})
+	DB.AutoMigrate(&models.RoomMember{})
 }

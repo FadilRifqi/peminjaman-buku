@@ -114,6 +114,32 @@ func AcceptFriendRequest(c *gin.Context){
 		Status: "Accepted",
 	}
 
+	// Find Room with Label = userID-friendID
+	var room models.Room
+	roomResult := database.DB.Where("label = ?", strconv.Itoa(int(user.(models.User).ID)) + "-" + strconv.Itoa(int(friendRequest.UserID))).First(&room)
+
+	if roomResult.Error != nil {
+		// Create New Room
+		room = models.Room{
+			Label: strconv.Itoa(int(user.(models.User).ID)) + "-" + strconv.Itoa(int(friendRequest.UserID)),
+		}
+		database.DB.Create(&room)
+		// Create Room Member
+		roomMember := models.RoomMember{
+			RoomID: room.ID,
+			UserID: user.(models.User).ID,
+		}
+		database.DB.Create(&roomMember)
+
+		roomMember = models.RoomMember{
+			RoomID: room.ID,
+			UserID: friendRequest.UserID,
+		}
+		database.DB.Create(&roomMember)
+		return
+	}
+
+
 	database.DB.Create(&friendship)
 
 	c.JSON(http.StatusOK, gin.H{})
