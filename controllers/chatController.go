@@ -68,7 +68,7 @@ func SendChat(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{})
+	c.JSON(http.StatusCreated, gin.H{"data": chat})
 }
 
 func GetMyChats(c *gin.Context) {

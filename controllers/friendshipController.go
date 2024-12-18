@@ -185,3 +185,50 @@ func DeleteFriend(c *gin.Context){
 
 	c.JSON(http.StatusOK, gin.H{})
 }
+
+func GetMyFriends(c *gin.Context) {
+    user, _ := c.Get("user")
+
+    var friendships []models.Friendship
+    database.DB.Where("user_id = ? AND status = ?", user.(models.User).ID, "Accepted").Find(&friendships)
+
+    type UserResponse struct {
+        ID          	uint   `json:"id"`
+        Username    	string `json:"username"`
+        Email       	string `json:"email"`
+        LastMessage  	string `json:"lastMessage"`
+		Time 	  		string `json:"time"`
+    }
+
+    var friends []UserResponse
+    for _, friendship := range friendships {
+        var friend models.User
+        database.DB.First(&friend, friendship.FriendID)
+
+        friendResponse := UserResponse{
+            ID:       friend.ID,
+            Username: friend.Username,
+            Email:    friend.Email,
+        }
+
+        // Search for the room with either user-friend or friend-user label
+        var room models.Room
+        userID := strconv.Itoa(int(user.(models.User).ID))
+        friendID := strconv.Itoa(int(friendship.FriendID))
+        label1 := userID + "-" + friendID
+        label2 := friendID + "-" + userID
+
+        roomResult := database.DB.Where("label = ? OR label = ?", label1, label2).First(&room)
+        if roomResult.Error == nil {
+            // Find the latest chat message for that room
+            var LatestChat models.Chat
+            database.DB.Where("room_id = ?", room.ID).Order("created_at desc").First(&LatestChat)
+            friendResponse.LastMessage = LatestChat.Message
+			friendResponse.Time = LatestChat.CreatedAt.Format("2006-01-02 15:04:05")
+        }
+
+        friends = append(friends, friendResponse)
+    }
+
+    c.JSON(http.StatusOK, gin.H{"data": friends})
+}
