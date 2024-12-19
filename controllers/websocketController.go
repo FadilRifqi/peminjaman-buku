@@ -9,6 +9,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+//TODO: Use redis to store the clients and rooms instead of a map
+
 // Define a connection pool to manage all WebSocket clients
 var (
     upgrader    = websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
