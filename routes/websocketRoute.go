@@ -9,6 +9,6 @@ import (
 func WebSocketRoutes(router *gin.Engine) {
 	websocket := router.Group("/ws")
 	{
-		websocket.GET("", controllers.HandleWebSocket)
+		websocket.GET("/:id", controllers.HandleWebSocket)
 	}
 }
