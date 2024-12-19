@@ -113,6 +113,7 @@ func AcceptFriendRequest(c *gin.Context){
 		FriendID: friendRequest.UserID,
 		Status: "Accepted",
 	}
+	database.DB.Create(&friendship)
 
 	// Find Room with Label = userID-friendID
 	var room models.Room
@@ -136,12 +137,7 @@ func AcceptFriendRequest(c *gin.Context){
 			UserID: friendRequest.UserID,
 		}
 		database.DB.Create(&roomMember)
-		return
 	}
-
-
-	database.DB.Create(&friendship)
-
 	c.JSON(http.StatusOK, gin.H{})
 }
 
